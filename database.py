@@ -21,6 +21,9 @@ class Cursor:
     def fetchall(self):
         return self._cursor.fetchall()
 
+    def __iter__(self):
+        return iter(self._cursor)
+
 
 class Connection:
     def __init__(self, url: str):
