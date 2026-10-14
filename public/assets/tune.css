@@ -1,0 +1,211 @@
+:root {
+  --paper: #ece2d2;
+  --paper-dark: #ddceb8;
+  --ink: #33251d;
+  --muted: #66574a;
+  --line: #c9b69e;
+  --blue: #70472f;
+  --blue-dark: #533522;
+  --sans: 'Golos Text', Arial, sans-serif;
+  --serif: 'PT Serif', Georgia, serif;
+  --mono: 'Golos Text', Arial, sans-serif;
+}
+
+body { font-size: 15px; }
+.topline { font-size: 10px; }
+.brand-mark { width: 43px; height: 43px; display: grid; place-items: center; padding: 0; border: 1.5px solid var(--blue); border-radius: 50%; color: var(--blue); font: 700 29px/1 var(--serif); transform: translateY(-1px); }
+.footer-brand .brand-mark { width: 33px; height: 33px; padding: 0; font-size: 23px; }
+.brand-name { font-size: 24px; }
+.brand-name small { font-size: 10px; letter-spacing: .06em; }
+.header-cta, .main-nav { font-size: 14px; }
+.hero-lede { font-size: 17px; }
+.hero-price-note { font-size: 12px; }
+.hero-proof { font-size: 12px; }
+.proof-avatars { align-items: center; }
+.proof-avatars .portrait { width: 42px; height: 48px; margin-right: -8px; border: 2px solid var(--paper); border-radius: 50%; overflow: hidden; background: #c6b8a0; }
+.proof-avatars img { display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(.65) sepia(.1); }
+.portrait-dima img { object-position: 43% 30%; }
+.portrait-anya img { object-position: 74% 30%; }
+.proof-rating small { font-size: 9px; }
+.hero-bottom { font-size: 10px; }
+.photo-caption, .art-index { font-size: 10px; }
+.hero-stamp { font-size: 9px; }
+.hero-stamp small { font-size: 8px; }
+.note-sun { position: relative; flex: 0 0 29px; }
+.note-sun::before { content: ''; position: absolute; inset: 7px; border: 1px solid currentColor; border-radius: 50%; }
+.note-sun::after { content: ''; position: absolute; width: 5px; height: 9px; left: 11px; top: 7px; border-radius: 80% 20%; background: #785a22; transform: rotate(38deg); }
+.eyebrow, .section-kicker, .coffee-meta, .time-day, .time-tag, .coffee-weight, .visit-label, .form-heading, .field>span, .sub-foot, .footer-copy, .copyright, .map-coord, .map-card svg text, .contact-row>span, .contact-row small { font-family: var(--sans); }
+.eyebrow { font-size: 10px; letter-spacing: .08em; }
+.section-kicker { font-size: 10px; letter-spacing: .08em; }
+.freshness-title p, .coffee-heading p, .visit-lede { font-size: 14px; }
+.time-day { font-size: 10px; letter-spacing: .08em; }
+.time-info h3 { font-size: 19px; }
+.time-info p { font-size: 12px; }
+.time-tag { font-size: 9px; }
+.time-mark { font-size: 0; }
+.roast-mark::before { content: ''; width: 13px; height: 21px; border: 1.5px solid #824d2a; border-radius: 80% 25% 75% 35%; transform: rotate(-35deg); }
+.roast-mark::after { content: ''; position: absolute; width: 1px; height: 15px; background: #824d2a; transform: rotate(38deg); }
+.pack-mark::before { content: ''; width: 16px; height: 17px; border: 1.5px solid var(--blue); transform: skewY(-7deg); }
+.pack-mark::after { content: ''; position: absolute; width: 9px; height: 1px; background: var(--blue); top: 17px; }
+.cup-mark::before { content: ''; width: 17px; height: 12px; border: 1.5px solid #51713d; border-top: 0; border-radius: 0 0 5px 5px; }
+.cup-mark::after { content: ''; position: absolute; width: 5px; height: 6px; border: 1.5px solid #51713d; border-left: 0; right: 8px; top: 13px; border-radius: 0 5px 5px 0; }
+.coffee-meta { font-size: 10px; }
+.coffee-description p { font-size: 13px; line-height: 1.7; }
+.tasting-tags span { font-size: 9px; }
+.coffee-weight { font-size: 10px; }
+.coffee-buy>strong { font-size: 31px; }
+.coffee-buy>strong small { font-size: 10px; }
+.add-coffee { font-size: 12px; }
+.coffee-footnote { font-size: 12px; }
+.sub-copy>p { font-size: 13px; }
+.sub-detail>span:nth-child(2) { font-size: 12px; }
+.sub-detail>span:nth-child(2) small { font: 10px var(--sans); }
+.sub-detail>b small { font-size: 9px; }
+.sub-foot { font-size: 9px; }
+.quote-author { font: 10px/1.7 var(--sans); letter-spacing: .06em; }
+.visit-label { font-size: 10px; }
+.visit-card h3 { font-size: 20px; }
+.visit-card p { font-size: 13px; }
+.visit-card a { font-size: 12px; }
+.detail-small { font-size: 9px; }
+.contact-row>span, .contact-row small { font-size: 9px; }
+.request-side>p { font-size: 13px; }
+.form-aside-note { font-size: 11px; }
+.form-heading { font-size: 10px; }
+.field>span { font-size: 10px; }
+.field input, .field select, .field textarea { font-size: 15px; }
+.field-hint, .privacy-note { font-size: 10px; }
+.button { font-size: 13px; }
+.footer-copy, .footer-social, .copyright { font-size: 9px; }
+
+/* Clear, warm type for the small decorative labels called out in review. */
+.hero-stamp { color: #f1e5d2; background: #70472f; font-size: 12px; font-weight: 600; letter-spacing: .025em; transform: none; }
+.hero-stamp b { color: #f1e5d2; font-size: 33px; }
+.hero-stamp small { color: #f1e5d2; font-size: 11px; }
+.batch-seal { color: #70472f; border-color: #a99175; }
+.batch-seal b { font-size: 32px; }
+.batch-seal span { font: 600 11px/1.35 var(--sans); letter-spacing: .025em; }
+.footer-copy, .footer-social, .copyright { color: #5c493b; font-size: 11px; letter-spacing: .025em; }
+.contact-row > span, .contact-row small { color: #5c493b; font-size: 11px; letter-spacing: .025em; }
+.quote-coordinate { font-size: 11px; letter-spacing: .025em; }
+.tasting-tags span { color: #47372b; font: 600 11px/1.2 var(--sans); letter-spacing: .025em; padding: 6px 8px; }
+.time-tag { color: #5c493b; font-size: 11px; font-weight: 600; letter-spacing: .025em; }
+.sub-foot { color: #f1e5d2; font-size: 11px; letter-spacing: .025em; }
+.photo-caption { color: #f5eadb; font-size: 11px; font-weight: 600; letter-spacing: .035em; }
+.brand-name small { font-size: 11px; font-weight: 500; }
+.sub-foot { font-weight: 600; }
+.quote-coordinate, .contact-row small, .contact-row > span,
+.footer-copy, .footer-social, .copyright { font-weight: 600; }
+
+@media (max-width: 900px) {
+  .main-nav { gap: 17px; font-size: 12px; }
+  .main-nav a, .header-cta { white-space: nowrap; flex-shrink: 0; }
+  .header-cta { font-size: 12px; }
+  .brand-name small { font-size: 9px; }
+  .hero-lede { font-size: 15px; }
+  .coffee-description p { font-size: 12px; }
+  .visit-card p { font-size: 12px; }
+}
+
+@media (max-width: 650px) {
+  body { font-size: 14px; }
+  .topline { font-size: 9px; }
+  .brand-mark { width: 40px; height: 40px; }
+  .brand-name { font-size: 22px; }
+  .brand-name small { font-size: 8px; }
+  .main-nav a { font-size: 15px; }
+  .eyebrow { font-size: 9px; letter-spacing: .06em; }
+  .hero-lede { font-size: 14px; }
+  .hero-proof { font-size: 10px; }
+  .proof-avatars .portrait { width: 35px; height: 40px; }
+  .hero-price-note { font-size: 11px; }
+  .hero-bottom { font-size: 8px; }
+  .photo-caption { font-size: 9px; }
+  .hero-stamp { font-size: 8px; }
+  .hero-stamp small { font-size: 7px; }
+  .float-note { font-size: 10px; }
+  .section-kicker { font-size: 9px; letter-spacing: .04em; }
+  .freshness-title p, .coffee-heading p, .visit-lede { font-size: 13px; }
+  .time-day { font-size: 9px; }
+  .time-info h3 { font-size: 16px; }
+  .time-info p { font-size: 10px; line-height: 1.5; }
+  .time-number { font-size: 9px; }
+  .coffee-row { min-height: 188px; grid-template-columns: 102px 1fr; gap: 13px; }
+  .coffee-art { height: 157px; }
+  .country-code { font-size: 10px; }
+  .art-side { font-size: 8px; }
+  .coffee-meta { font-size: 9px; letter-spacing: .025em; }
+  .coffee-description h3 { font-size: 22px; }
+  .coffee-description p { font-size: 10px; line-height: 1.55; }
+  .tasting-tags { gap: 5px; }
+  .tasting-tags span { font-size: 9px; padding: 4px 5px; }
+  .coffee-buy { bottom: 13px; gap: 8px; }
+  .coffee-weight { font-size: 8px; }
+  .coffee-buy>strong { font-size: 19px; }
+  .coffee-buy>strong small { font-size: 8px; }
+  .add-coffee { font-size: 10px; }
+  .coffee-footnote { font-size: 10px; }
+  .sub-copy .eyebrow { font-size: 9px; }
+  .sub-copy>p { font-size: 12px; }
+  .sub-detail>span:nth-child(2) { font-size: 10px; }
+  .sub-detail>span:nth-child(2) small { font-size: 9px; }
+  .sub-foot { display: block; margin: 13px 0 0; font-size: 9px; }
+  .quote-author { font-size: 9px; }
+  .quote-coordinate { font-size: 8px; }
+  .visit-label { font-size: 9px; }
+  .visit-card h3 { font-size: 18px; }
+  .visit-card p { font-size: 12px; }
+  .visit-card a { font-size: 11px; }
+  .map-coord { font-size: 8px; }
+  .detail-small { font-size: 9px; line-height: 1.5; }
+  .contact-row>span, .contact-row small { font-size: 9px; }
+  .request-side>p { font-size: 12px; }
+  .form-aside-note { font-size: 10px; }
+  .form-heading { font-size: 10px; }
+  .field>span { font-size: 10px; }
+  .field input, .field select, .field textarea { font-size: 14px; }
+  .field-hint, .privacy-note { font-size: 10px; }
+  .submit-button { font-size: 12px; }
+  .footer-copy, .footer-social, .copyright { font-size: 9px; }
+  .mobile-bar>span { font-size: 11px; }
+  .mobile-bar small { font-size: 9px; }
+  .mobile-bar>a { font-size: 11px; }
+}
+
+/* Clearer labels on compact screens; editorial captions remain secondary. */
+@media (max-width: 650px) {
+  .topline { font-size: 10px; }
+  .eyebrow, .section-kicker, .coffee-meta, .time-day, .visit-label, .form-heading,
+  .field > span, .hero-bottom, .map-coord, .detail-small, .contact-row > span,
+  .contact-row small, .field-hint, .privacy-note, .footer-copy, .footer-social, .copyright,
+  .photo-caption, .founders-photo span { font-size: 11px; }
+  .section-kicker { letter-spacing: .025em; }
+  .time-info p, .coffee-description p, .sub-copy > p, .visit-card p, .request-side > p,
+  .form-aside-note { font-size: 13px; line-height: 1.55; }
+  .tasting-tags span, .coffee-weight, .sub-foot, .quote-coordinate { font-size: 10px; }
+  .field-hint, .privacy-note { line-height: 1.5; }
+  .mobile-bar > span, .mobile-bar > a { font-size: 13px; }
+  .mobile-bar small { font-size: 10px; }
+}
+
+@media (max-width: 370px) {
+  .eyebrow, .section-kicker, .coffee-meta, .time-day, .visit-label, .form-heading,
+  .field > span, .hero-bottom, .map-coord, .detail-small, .contact-row > span,
+  .contact-row small, .field-hint, .privacy-note, .footer-copy, .footer-social, .copyright,
+  .photo-caption, .founders-photo span { font-size: 10px; }
+  .coffee-description p, .time-info p { font-size: 12px; }
+}
+
+@media (min-width: 651px) {
+  .main-nav, .header-cta { white-space: nowrap; flex-shrink: 0; }
+}
+
+@media (min-width: 651px) and (max-width: 780px) {
+  .main-nav { display: none; }
+  .menu-toggle { display: flex; background: none; border: 0; flex-direction: column; gap: 5px; padding: 8px; }
+  .menu-toggle span { width: 22px; height: 1px; background: var(--ink); }
+  .header-cta { margin-left: auto; margin-right: 18px; }
+  .main-nav.open { display: flex; position: absolute; top: 100%; left: 0; right: 0; padding: 12px 5vw; flex-direction: column; gap: 0; background: var(--paper); border-bottom: 1px solid var(--line); }
+  .main-nav.open a { padding: 13px 0; border-bottom: 1px solid var(--line); }
+}
+
