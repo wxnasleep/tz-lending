@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+leads.sqlite3
+leads.sqlite3-shm
+leads.sqlite3-wal
+.venv/
+.idea/
+.env
+.telegram-recipient.json
+.server.out.log
+.server.err.log
