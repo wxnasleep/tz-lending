@@ -19,6 +19,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
+from zoneinfo import ZoneInfo
 
 
 ROOT = Path(__file__).parent
@@ -40,6 +41,9 @@ def load_env() -> None:
 
 
 load_env()
+if os.environ.get("DATABASE_URL"):
+    from database import connect as postgres_connect
+    sqlite3.connect = postgres_connect  # type: ignore[assignment]
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 RECIPIENT_USERNAME = os.environ.get("TELEGRAM_RECIPIENT_USERNAME", "wxnasleep").strip().lstrip("@").lower()
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
@@ -48,6 +52,8 @@ INTEREST_LABELS = {
     "order": "Разовый заказ",
     "question": "Вопрос о кофе",
 }
+_DB_INITIALIZED = False
+_DB_INIT_LOCK = threading.Lock()
 
 
 def normalize_phone(value: str) -> str | None:
@@ -102,7 +108,7 @@ def allow_request(remote_ip: str) -> tuple[bool, int]:
     return allowed, retry
 
 
-def init_db() -> None:
+def _init_db_tables() -> None:
     with sqlite3.connect(DB_PATH) as db:
         db.execute("""CREATE TABLE IF NOT EXISTS leads (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -157,8 +163,9 @@ def init_db() -> None:
             notified_at TEXT NOT NULL DEFAULT ''
         )""")
         db.execute("CREATE INDEX IF NOT EXISTS reminders_due ON lead_reminders(status, due_at)")
-        db.execute("UPDATE lead_reminders SET status='pending' WHERE status='sending'")
-        db.execute("UPDATE leads SET telegram_status='pending' WHERE telegram_status='sending'")
+        if not os.environ.get("DATABASE_URL"):
+            db.execute("UPDATE lead_reminders SET status='pending' WHERE status='sending'")
+            db.execute("UPDATE leads SET telegram_status='pending' WHERE telegram_status='sending'")
         db.execute("""CREATE TABLE IF NOT EXISTS request_limits (
             ip_hash TEXT PRIMARY KEY,
             window_started REAL NOT NULL,
@@ -167,6 +174,21 @@ def init_db() -> None:
             day_count INTEGER NOT NULL,
             updated_at REAL NOT NULL
         )""")
+        db.execute("""CREATE TABLE IF NOT EXISTS telegram_updates (
+            update_id BIGINT PRIMARY KEY,
+            received_at TEXT NOT NULL
+        )""")
+
+
+def init_db() -> None:
+    global _DB_INITIALIZED
+    if _DB_INITIALIZED:
+        return
+    with _DB_INIT_LOCK:
+        if _DB_INITIALIZED:
+            return
+        _init_db_tables()
+        _DB_INITIALIZED = True
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -212,12 +234,6 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         if urlparse(self.path).path != "/api/lead":
             return self.respond(HTTPStatus.NOT_FOUND, {"ok": False, "error": "Маршрут не найден."})
-        allowed, retry_after = allow_request(self.client_address[0])
-        if not allowed:
-            return self.respond(HTTPStatus.TOO_MANY_REQUESTS, {
-                "ok": False,
-                "error": "Слишком много попыток. Подождите немного и попробуйте снова.",
-            }, {"Retry-After": str(retry_after)})
         content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
         if content_type != "application/json":
             return self.respond(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, {"ok": False, "error": "Неверный формат заявки."})
@@ -230,43 +246,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(HTTPStatus.BAD_REQUEST, {"ok": False, "error": "Не удалось прочитать заявку. Попробуйте ещё раз."})
         if not isinstance(payload, dict):
             return self.respond(HTTPStatus.BAD_REQUEST, {"ok": False, "error": "Проверьте заполнение формы."})
-        if self.clean(payload.get("website"), 200):
-            return self.respond(HTTPStatus.CREATED, {"ok": True, "message": "Спасибо! Заявка принята — мы скоро свяжемся."})
-        name = self.clean(payload.get("name"), 100)
-        phone = normalize_phone(self.clean(payload.get("phone"), 40))
-        interest = self.clean(payload.get("interest"), 30)
-        comment = self.clean(payload.get("comment"), 1_000)
-        if not name:
-            return self.respond(HTTPStatus.UNPROCESSABLE_ENTITY, {"ok": False, "error": "Напишите, как к вам обращаться."})
-        if not phone:
-            return self.respond(HTTPStatus.UNPROCESSABLE_ENTITY, {"ok": False, "error": "Введите белорусский номер: +375 29 123‑45‑67."})
-        if interest not in {"subscription", "order", "question"}:
-            return self.respond(HTTPStatus.UNPROCESSABLE_ENTITY, {"ok": False, "error": "Выберите, что вас интересует."})
-
-        now = datetime.now(timezone.utc)
-        with sqlite3.connect(DB_PATH, timeout=10) as db:
-            db.execute("BEGIN IMMEDIATE")
-            duplicate = db.execute(
-                "SELECT id, created_at FROM leads WHERE phone = ? ORDER BY id DESC LIMIT 1", (phone,)
-            ).fetchone()
-            if duplicate:
-                created = datetime.fromisoformat(duplicate[1])
-                if now - created < timedelta(minutes=10):
-                    db.commit()
-                    return self.respond(HTTPStatus.OK, {"ok": True, "duplicate": True, "message": "Заявка уже у нас. Скоро позвоним!"})
-            query = urlparse(self.path).query
-            del query
-            attribution = payload.get("attribution") if isinstance(payload.get("attribution"), dict) else {}
-            fields = [self.clean(attribution.get(key), 500) for key in ("utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "page", "referrer")]
-            cursor = db.execute(
-                "INSERT INTO leads(name,phone,interest,comment,source,medium,campaign,content,term,landing_page,referrer,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
-                (name, phone, interest, comment, *fields, now.isoformat()),
-            )
-            lead_id = cursor.lastrowid
-            db.commit()
-        print(f"Новая заявка #{lead_id}: {name} · {interest}", flush=True)
-        queue_telegram_delivery(lead_id)
-        return self.respond(HTTPStatus.CREATED, {"ok": True, "message": "Спасибо! Заявка принята — мы скоро свяжемся."})
+        status, data, headers = process_lead(payload, self.client_address[0])
+        return self.respond(status, data, headers)
 
     @staticmethod
     def clean(value: object, limit: int) -> str:
@@ -289,6 +270,48 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt: str, *args: object) -> None:
         print(f"[{self.log_date_time_string()}] {fmt % args}", flush=True)
+
+
+def process_lead(payload: dict, remote_ip: str):
+    """Validate, de-duplicate and persist one public lead submission."""
+    allowed, retry_after = allow_request(remote_ip)
+    if not allowed:
+        return HTTPStatus.TOO_MANY_REQUESTS, {
+            "ok": False,
+            "error": "Слишком много попыток. Подождите немного и попробуйте снова.",
+        }, {"Retry-After": str(retry_after)}
+    clean = Handler.clean
+    if clean(payload.get("website"), 200):
+        return HTTPStatus.CREATED, {"ok": True, "message": "Спасибо! Заявка принята — мы скоро свяжемся."}, {}
+    name = clean(payload.get("name"), 100)
+    phone = normalize_phone(clean(payload.get("phone"), 40))
+    interest = clean(payload.get("interest"), 30)
+    comment = clean(payload.get("comment"), 1_000)
+    if not name:
+        return HTTPStatus.UNPROCESSABLE_ENTITY, {"ok": False, "error": "Напишите, как к вам обращаться."}, {}
+    if not phone:
+        return HTTPStatus.UNPROCESSABLE_ENTITY, {"ok": False, "error": "Введите белорусский номер: +375 29 123‑45‑67."}, {}
+    if interest not in {"subscription", "order", "question"}:
+        return HTTPStatus.UNPROCESSABLE_ENTITY, {"ok": False, "error": "Выберите, что вас интересует."}, {}
+
+    now = datetime.now(timezone.utc)
+    with sqlite3.connect(DB_PATH, timeout=10) as db:
+        db.execute("BEGIN IMMEDIATE")
+        duplicate = db.execute("SELECT id, created_at FROM leads WHERE phone = ? ORDER BY id DESC LIMIT 1", (phone,)).fetchone()
+        if duplicate:
+            created = datetime.fromisoformat(duplicate[1])
+            if now - created < timedelta(minutes=10):
+                return HTTPStatus.OK, {"ok": True, "duplicate": True, "message": "Заявка уже у нас. Скоро позвоним!"}, {}
+        attribution = payload.get("attribution") if isinstance(payload.get("attribution"), dict) else {}
+        fields = [clean(attribution.get(key), 500) for key in ("utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "page", "referrer")]
+        cursor = db.execute(
+            "INSERT INTO leads(name,phone,interest,comment,source,medium,campaign,content,term,landing_page,referrer,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+            (name, phone, interest, comment, *fields, now.isoformat()),
+        )
+        lead_id = cursor.lastrowid
+    print(f"Новая заявка #{lead_id}: {name} · {interest}", flush=True)
+    queue_telegram_delivery(lead_id)
+    return HTTPStatus.CREATED, {"ok": True, "message": "Спасибо! Заявка принята — мы скоро свяжемся."}, {}
 
 
 class LimitedThreadingHTTPServer(ThreadingHTTPServer):
@@ -358,7 +381,10 @@ def queue_telegram_delivery(lead_id: int) -> None:
     if not BOT_TOKEN:
         mark_telegram(lead_id, "disabled")
         return
-    threading.Thread(target=deliver_lead, args=(lead_id,), daemon=True).start()
+    if os.environ.get("VERCEL"):
+        deliver_lead(lead_id)
+    else:
+        threading.Thread(target=deliver_lead, args=(lead_id,), daemon=True).start()
 
 
 def mark_telegram(lead_id: int, status: str, message_id: str = "") -> None:
@@ -367,7 +393,7 @@ def mark_telegram(lead_id: int, status: str, message_id: str = "") -> None:
 
 
 def local_now() -> datetime:
-    return datetime.now().astimezone()
+    return datetime.now(ZoneInfo(os.environ.get("APP_TIMEZONE", "Europe/Minsk")))
 
 
 def load_lead(lead_id: int) -> tuple | None:
@@ -766,6 +792,33 @@ def handle_update(update: dict) -> None:
         handle_callback(callback)
 
 
+def process_telegram_update(update: dict) -> None:
+    """Deduplicate Telegram webhook retries before running the existing workflow."""
+    update_id = update.get("update_id")
+    if not isinstance(update_id, int):
+        raise ValueError("Telegram update has no numeric update_id")
+    with sqlite3.connect(DB_PATH, timeout=10) as db:
+        inserted = db.execute(
+            "INSERT INTO telegram_updates(update_id,received_at) VALUES(?,?) ON CONFLICT(update_id) DO NOTHING",
+            (update_id, datetime.now(timezone.utc).isoformat()),
+        )
+        if inserted.rowcount == 0:
+            return
+        if update_id % 64 == 0:
+            db.execute("DELETE FROM telegram_updates WHERE received_at < ?", ((datetime.now(timezone.utc) - timedelta(days=30)).isoformat(),))
+    handle_update(update)
+
+
+def deliver_pending_leads() -> None:
+    chat_id = setting("telegram_chat_id")
+    if not chat_id:
+        return
+    with sqlite3.connect(DB_PATH, timeout=10) as db:
+        pending = db.execute("SELECT id FROM leads WHERE telegram_status='pending' ORDER BY id LIMIT 20").fetchall()
+    for (lead_id,) in pending:
+        deliver_lead(lead_id)
+
+
 def deliver_due_reminders() -> None:
     chat_id = setting("telegram_chat_id")
     if not chat_id:
@@ -836,7 +889,7 @@ def telegram_poll_worker() -> None:
 
 if __name__ == "__main__":
     init_db()
-    if BOT_TOKEN:
+    if BOT_TOKEN and not os.environ.get("VERCEL"):
         threading.Thread(target=telegram_poll_worker, daemon=True, name="telegram-bot-poll").start()
     port = int(os.environ.get("PORT", "8000"))
     print(f"Кварта открыта: http://localhost:{port}", flush=True)
