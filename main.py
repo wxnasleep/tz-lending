@@ -45,7 +45,6 @@ if os.environ.get("DATABASE_URL"):
     from database import connect as postgres_connect
     sqlite3.connect = postgres_connect  # type: ignore[assignment]
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-RECIPIENT_USERNAME = os.environ.get("TELEGRAM_RECIPIENT_USERNAME", "wxnasleep").strip().lstrip("@").lower()
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 INTEREST_LABELS = {
     "subscription": "Подписка · 2 пачки по 250 г / месяц",
@@ -377,6 +376,11 @@ def set_setting(key: str, value: str) -> None:
         db.execute("INSERT INTO app_settings(key, value) VALUES(?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, value))
 
 
+def telegram_recipient_username() -> str:
+    """Read the allowed Telegram recipient from runtime environment settings."""
+    return os.environ.get("TELEGRAM_RECIPIENT_USERNAME", "").strip().lstrip("@").lower()
+
+
 def queue_telegram_delivery(lead_id: int) -> None:
     if not BOT_TOKEN:
         mark_telegram(lead_id, "disabled")
@@ -615,7 +619,7 @@ def handle_message(message: dict) -> None:
     command = text.split(" ", 1)[0].split("@", 1)[0].lower() if text else ""
 
     if command == "/start":
-        if username != RECIPIENT_USERNAME or chat.get("type") != "private":
+        if not username or username != telegram_recipient_username() or chat.get("type") != "private":
             return
         set_setting("telegram_chat_id", chat_id)
         set_setting("telegram_recipient_user_id", user_id)

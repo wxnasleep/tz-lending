@@ -6,8 +6,8 @@
 
 1. Импортировать GitHub-репозиторий `vovavovavovan2009-lang/tz-lending` в Vercel с preset `Other`.
 2. Подключить PostgreSQL в Vercel Marketplace (например, Neon), выбрать доступный бесплатный тариф и привязать ресурс к проекту. Интеграция добавит `DATABASE_URL` в среду проекта.
-3. Добавить Production environment variables: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_RECIPIENT_USERNAME=wxnasleep`, `TELEGRAM_WEBHOOK_SECRET` (случайная строка от 16 символов), `CRON_SECRET` (другая случайная строка) и `APP_TIMEZONE=Europe/Minsk`. Те же значения задаются отдельно для Preview только если нужны тестовые уведомления.
-4. После первого deployment установить Telegram webhook командой `python scripts/set_telegram_webhook.py https://<deployment-domain>`, предварительно задав в локальном окружении токен и webhook secret. Затем получатель `@wxnasleep` один раз отправляет боту `/start`.
+3. Добавить Production environment variables: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_RECIPIENT_USERNAME` (имя получателя без `@`), `TELEGRAM_WEBHOOK_SECRET` (случайная строка от 16 символов), `CRON_SECRET` (другая случайная строка) и `APP_TIMEZONE=Europe/Minsk`. Те же значения задаются отдельно для Preview только если нужны тестовые уведомления.
+4. После первого deployment установить Telegram webhook командой `python scripts/set_telegram_webhook.py https://<deployment-domain>`, предварительно задав в локальном окружении токен и webhook secret. Затем указанный в `TELEGRAM_RECIPIENT_USERNAME` пользователь один раз отправляет боту `/start`.
 5. Для автоматических напоминаний каждую минуту в `vercel.json` добавить:
 
    ```json
